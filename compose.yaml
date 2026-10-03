@@ -1,0 +1,39 @@
+services:
+  proxy:
+    build: .
+    restart: unless-stopped
+    init: true
+    user: "${PROXY_UID:-1000}:${PROXY_GID:-1000}"
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file: .env
+    environment:
+      BUZZ_PRIVATE_KEY_FILE: /run/secrets/bot_key
+      ALERTS_WEBHOOK_TOKEN_FILE: /run/secrets/webhook_token
+      ADMIN_TOKEN_FILE: /run/secrets/admin_token
+      ROUTES_FILE: /app/routes.json
+      DATABASE_PATH: /app/data/outbox.sqlite
+    secrets:
+      - bot_key
+      - webhook_token
+      - admin_token
+    volumes:
+      - ./routes.json:/app/routes.json:ro
+      - ./data:/app/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  bot_key:
+    file: ./secrets/bot.key
+  webhook_token:
+    file: ./secrets/webhook.token
+  admin_token:
+    file: ./secrets/admin.token

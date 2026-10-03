@@ -1,0 +1,25 @@
+groups:
+  - name: buzz-proxy
+    rules:
+      - alert: BuzzProxyDeliveryFailed
+        expr: buzz_proxy_queue_depth{state="failed"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Buzz proxy has permanently failed deliveries
+      - alert: BuzzProxyDeliveryDelayed
+        expr: buzz_proxy_oldest_pending_seconds > 300
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Buzz alerts have been waiting over five minutes
+      - alert: BuzzProxyDown
+        expr: up{job="buzz-proxy"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Buzz proxy metrics endpoint cannot be scraped
+# Send these through an independent notification path.

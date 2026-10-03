@@ -1,0 +1,17 @@
+route:
+  receiver: buzz
+  group_by: [alertname, cluster]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+receivers:
+  - name: buzz
+    webhook_configs:
+      - url: https://buzz-proxy.example.com/hooks/alerts
+        send_resolved: true
+        # Grouping/max_alerts should keep rendered messages below 60 KiB.
+        max_alerts: 20
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/buzz-webhook-token

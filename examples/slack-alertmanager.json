@@ -1,0 +1,12 @@
+{
+  "channel": "#alerts", "username": "Alertmanager", "icon_emoji": ":warning:",
+  "attachments": [{
+    "color": "danger", "fallback": "FIRING: HighErrorRate",
+    "title": "[FIRING:1] HighErrorRate", "title_link": "https://prometheus.example.com/alerts",
+    "text": "*checkout* is returning 8.3% errors.\n<https://runbooks.example.com/high-error-rate|Runbook>",
+    "mrkdwn_in": ["text", "fields"],
+    "fields": [{ "title": "Severity", "value": "critical", "short": true }, { "title": "Instance", "value": "checkout-01:9090", "short": true }],
+    "actions": [{ "type": "button", "text": "Silence", "url": "https://alertmanager.example.com/#/silences/new" }],
+    "footer": "Prometheus", "ts": 1790985600
+  }]
+}

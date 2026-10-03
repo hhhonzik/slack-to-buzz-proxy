@@ -1,0 +1,38 @@
+{
+  "name": "slack-to-buzz-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Slack-compatible alert webhooks to signed Buzz messages",
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "test": "tsx --test test/*.test.ts",
+    "check": "tsc --noEmit",
+    "init": "tsx src/cli.ts init",
+    "preview": "tsx src/cli.ts preview",
+    "doctor": "tsx src/cli.ts doctor",
+    "queue": "tsx src/cli.ts queue"
+  },
+  "dependencies": {
+    "nostr-tools": "2.25.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hhhonzik/slack-to-buzz-proxy.git"
+  },
+  "homepage": "https://github.com/hhhonzik/slack-to-buzz-proxy#readme",
+  "bugs": {
+    "url": "https://github.com/hhhonzik/slack-to-buzz-proxy/issues"
+  }
+}

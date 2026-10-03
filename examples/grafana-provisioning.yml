@@ -1,0 +1,20 @@
+# Mount in Grafana's provisioning/alerting directory.
+# Set BUZZ_WEBHOOK_URL in Grafana's environment to the FULL proxy URL:
+# https://buzz-proxy.example.com/hooks/alerts/<webhook token>
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: Buzz alerts
+    receivers:
+      - uid: buzz-slack
+        type: slack
+        disableResolveMessage: false
+        settings:
+          recipient: '#alerts'
+          username: Grafana
+          title: '{{ template "default.title" . }}'
+          text: '{{ template "default.message" . }}'
+          url: ${BUZZ_WEBHOOK_URL}
+# Attach this contact point to your notification policy in Grafana.
+# For a native webhook contact point instead, choose Webhook in the UI,
+# use /hooks/alerts, POST, and HTTP Authorization scheme Bearer with the token.

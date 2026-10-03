@@ -1,0 +1,15 @@
+{
+  "text": "FIRING: HighErrorRate on checkout",
+  "blocks": [
+    { "type": "header", "text": { "type": "plain_text", "text": "🔴 HighErrorRate — checkout" } },
+    { "type": "section", "text": { "type": "mrkdwn", "text": "*Error rate is 8.3%*\nThreshold: 5% for 10 minutes." }, "fields": [
+      { "type": "mrkdwn", "text": "*Service*\ncheckout" },
+      { "type": "mrkdwn", "text": "*Environment*\nproduction" }
+    ] },
+    { "type": "actions", "elements": [
+      { "type": "button", "text": { "type": "plain_text", "text": "Dashboard" }, "url": "https://grafana.example.com/d/checkout" },
+      { "type": "button", "text": { "type": "plain_text", "text": "Runbook" }, "url": "https://runbooks.example.com/high-error-rate" }
+    ] },
+    { "type": "context", "elements": [{ "type": "mrkdwn", "text": "Prometheus • cluster: eu-1" }] }
+  ]
+}

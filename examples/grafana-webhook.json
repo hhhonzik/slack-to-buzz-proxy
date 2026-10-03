@@ -1,0 +1,14 @@
+{
+  "receiver": "buzz", "status": "firing", "orgId": 1,
+  "title": "[FIRING:1] HighErrorRate", "message": "checkout alert summary",
+  "commonLabels": { "alertname": "HighErrorRate", "team": "payments" },
+  "externalURL": "https://grafana.example.com/", "truncatedAlerts": 0,
+  "alerts": [{
+    "status": "firing", "labels": { "alertname": "HighErrorRate", "service": "checkout", "severity": "critical" },
+    "annotations": { "summary": "Checkout error rate is above 5%", "description": "Error rate has been high for 10 minutes.", "runbook_url": "https://runbooks.example.com/high-error-rate" },
+    "startsAt": "2026-10-03T01:00:00Z", "endsAt": "0001-01-01T00:00:00Z",
+    "generatorURL": "https://grafana.example.com/alerting/grafana/abc/view",
+    "dashboardURL": "https://grafana.example.com/d/checkout", "panelURL": "https://grafana.example.com/d/checkout?viewPanel=2",
+    "silenceURL": "https://grafana.example.com/alerting/silence/new", "values": { "A": 8.3, "B": 1 }, "fingerprint": "synthetic-fixture"
+  }]
+}
