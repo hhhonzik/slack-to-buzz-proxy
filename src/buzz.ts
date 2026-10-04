@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { request as httpRequest, type IncomingHttpHeaders } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { finalizeEvent, getPublicKey, type Event } from 'nostr-tools';
 import type { Rendered } from './types.js';
 import type { Config } from './config.js';
@@ -18,6 +20,27 @@ export function authHeader(key: Uint8Array, url: string, body: string): string {
 export class DeliveryError extends Error {
   constructor(public code: string, public retryable: boolean, public retryAfterMs = 0) { super(code); }
 }
+function post(url: string, headers: Record<string, string>, body: string, timeoutMs: number): Promise<{ status: number; headers: IncomingHttpHeaders; body: string }> {
+  return new Promise((resolve, reject) => {
+    const request = new URL(url).protocol === 'https:' ? httpsRequest : httpRequest;
+    const req = request(url, { method: 'POST', headers, signal: AbortSignal.timeout(timeoutMs) }, async response => {
+      const status = response.statusCode || 502;
+      if (status < 200 || status >= 300) {
+        resolve({ status, headers: response.headers, body: '' }); response.destroy(); return;
+      }
+      try {
+        const chunks: Buffer[] = []; let size = 0;
+        for await (const chunk of response) {
+          size += chunk.length;
+          if (size > 1048576) throw new DeliveryError('buzz_response_too_large', false);
+          chunks.push(Buffer.from(chunk));
+        }
+        resolve({ status, headers: response.headers, body: Buffer.concat(chunks).toString('utf8') });
+      } catch (error) { response.destroy(); reject(error); }
+    });
+    req.on('error', reject); req.end(body);
+  });
+}
 function retryDelay(value: string | null) {
   if (!value) return 0;
   const ms = /^\d+(\.\d+)?$/.test(value) ? Number(value) * 1000 : Date.parse(value) - Date.now();
@@ -25,25 +48,24 @@ function retryDelay(value: string | null) {
 }
 export class BuzzClient {
   publicKey: string;
-  constructor(private config: Pick<Config, 'key' | 'relayUrl' | 'authTag' | 'timeoutMs'>) { this.publicKey = getPublicKey(config.key); }
+  constructor(private config: Pick<Config, 'key' | 'relayUrl' | 'transportUrl' | 'authTag' | 'timeoutMs'>) { this.publicKey = getPublicKey(config.key); }
   async request(path: '/events' | '/query', body: string): Promise<unknown> {
     const url = this.config.relayUrl + path;
     try {
       const headers: Record<string, string> = { 'content-type': 'application/json', authorization: authHeader(this.config.key, url, body) };
       if (this.config.authTag) headers['x-auth-tag'] = this.config.authTag;
-      const response = await fetch(url, { method: 'POST', headers, body, redirect: 'manual', signal: AbortSignal.timeout(this.config.timeoutMs) });
-      if (!response.ok) {
-        await response.body?.cancel();
+      // Internal service routing must preserve the community authority and the
+      // externally configured URL that Buzz expects in the NIP-98 proof.
+      if (this.config.transportUrl) headers.host = new URL(this.config.relayUrl).host;
+      const transportUrl = (this.config.transportUrl || this.config.relayUrl) + path;
+      // Node's fetch rewrites Host, so use the native HTTP client. It never
+      // follows redirects and permits the explicit community authority.
+      const response = await post(transportUrl, headers, body, this.config.timeoutMs);
+      if (response.status < 200 || response.status >= 300) {
         throw new DeliveryError(`buzz_http_${response.status}`, [401, 403, 408, 425, 429].includes(response.status) || response.status >= 500,
-          Math.max(retryDelay(response.headers.get('retry-after')), [401, 403].includes(response.status) ? 60000 : 0));
+          Math.max(retryDelay(response.headers['retry-after'] || null), [401, 403].includes(response.status) ? 60000 : 0));
       }
-      // A bad gateway or compromised relay must not allocate an unlimited response.
-      let text = '';
-      if (response.body) for await (const chunk of response.body) {
-        text += Buffer.from(chunk).toString('utf8');
-        if (Buffer.byteLength(text) > 1048576) throw new DeliveryError('buzz_response_too_large', false);
-      }
-      try { return JSON.parse(text); } catch { throw new DeliveryError('buzz_invalid_response', true); }
+      try { return JSON.parse(response.body); } catch { throw new DeliveryError('buzz_invalid_response', true); }
     } catch (e) {
       if (e instanceof DeliveryError) throw e;
       throw new DeliveryError('buzz_network_or_timeout', true);

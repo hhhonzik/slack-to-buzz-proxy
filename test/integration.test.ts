@@ -136,3 +136,25 @@ test('same-content notifications receive distinct event IDs when deduplication e
   assert.notEqual(messageEvent(c.key, channel, r).id, messageEvent(c.key, channel, r).id);
   assert.notEqual(authHeader(c.key, c.relayUrl + '/events', '{}'), authHeader(c.key, c.relayUrl + '/events', '{}'));
 });
+
+test('internal transport preserves canonical Host and signed URL without changing stored destination', async t => {
+  const canonical = 'https://community.example.com';
+  let proofVerified = false;
+  const relay = createServer(async (req, res) => {
+    try {
+      let body = ''; for await (const chunk of req) body += chunk;
+      const auth = JSON.parse(Buffer.from(req.headers.authorization!.slice(6), 'base64').toString());
+      assert.equal(req.headers.host, 'community.example.com');
+      assert.equal(verifyEvent(auth), true);
+      assert.ok(auth.tags.some((tag: string[]) => tag[0] === 'u' && tag[1] === canonical + '/events'));
+      assert.ok(auth.tags.some((tag: string[]) => tag[0] === 'payload' && tag[1] === sha256(body)));
+      const event = JSON.parse(body); proofVerified = true;
+      res.end(JSON.stringify({ event_id: event.id, accepted: true, message: '' }));
+    } catch { res.statusCode = 400; res.end('invalid proof'); }
+  });
+  const transportUrl = await listen(relay); t.after(() => close(relay));
+  const c = { ...config(canonical), transportUrl };
+  const client = new BuzzClient(c); const event = messageEvent(c.key, channel, renderPayload({ text: 'Internal delivery' }));
+  await client.publish(event, canonical); assert.equal(proofVerified, true);
+  await assert.rejects(() => client.publish(event, transportUrl), /destination_or_identity_changed/);
+});

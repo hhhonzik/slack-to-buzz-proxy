@@ -4,7 +4,7 @@ import { arr, obj, str, type RenderOptions } from './types.js';
 
 export interface Route extends RenderOptions { name: string; channelId: string; token: string }
 export interface Config {
-  host: string; port: number; relayUrl: string; key: Uint8Array; authTag?: string;
+  host: string; port: number; relayUrl: string; transportUrl?: string; key: Uint8Array; authTag?: string;
   routes: Route[]; dbPath: string; adminToken?: string; maxBodyBytes: number;
   maxQueued: number; dedupSeconds: number; retentionDays: number; timeoutMs: number;
 }
@@ -57,6 +57,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     host: env.HOST || '0.0.0.0', port: integer(env, 'PORT', 8080, 1, 65535),
     relayUrl: normalizeRelay(env.BUZZ_RELAY_URL || ''), key: parseKey(secret(env, 'BUZZ_PRIVATE_KEY')),
+    transportUrl: env.BUZZ_TRANSPORT_URL ? normalizeRelay(env.BUZZ_TRANSPORT_URL) : undefined,
     authTag: authTag || undefined, routes, dbPath: env.DATABASE_PATH || 'data/outbox.sqlite', adminToken: adminToken || undefined,
     maxBodyBytes: integer(env, 'MAX_BODY_BYTES', 1048576, 1024, 4194304),
     maxQueued: integer(env, 'MAX_QUEUED', 10000, 1, 100000),

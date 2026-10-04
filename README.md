@@ -119,6 +119,7 @@ Scrape `/metrics` with the admin token and use [examples/prometheus-rules.yml](e
 | Variable | Default / purpose |
 |---|---|
 | `BUZZ_RELAY_URL` | Required community relay origin |
+| `BUZZ_TRANSPORT_URL` | Optional internal service origin; retains the relay Host header and canonical NIP-98 signing URL |
 | `BUZZ_PRIVATE_KEY` / `_FILE` | Required dedicated bot secret, hex or nsec |
 | `BUZZ_AUTH_TAG` / `_FILE` | Optional NIP-OA JSON auth tag |
 | `ROUTES_FILE` | `routes.json` |
@@ -132,6 +133,8 @@ Scrape `/metrics` with the admin token and use [examples/prometheus-rules.yml](e
 | `RETENTION_DAYS` | `7` delivered-receipt retention |
 
 ## Development
+
+CI publishes a tested Linux amd64 image to `ghcr.io/hhhonzik/slack-to-buzz-proxy:sha-<full-commit>` on pushes to `main`. Deploy an immutable commit tag. For an internal Kubernetes relay, set `BUZZ_RELAY_URL` to its canonical community origin and `BUZZ_TRANSPORT_URL` to its internal service origin. This avoids routing through the public ingress while preserving Buzz's community/authentication boundary. Both origins are trusted operator configuration; redirect forwarding remains disabled.
 
 ```sh
 npm ci
